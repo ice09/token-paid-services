@@ -73,15 +73,32 @@ class TokenPaidServicesApplicationTests {
 		List<String> dests = Lists.newArrayList(gcto.getContractAddress());
 		List<BigInteger> wads = Lists.newArrayList(BigInteger.ONE);
 
-		// Bob gives GCTO Contract allowance on his Token
-		// Currently this must be GCT *and* GCTO - is that correct? Why?
-		ERC20 sampleTokenLoadedFromFrom = ERC20.load(bobToken, web3j, groupCurrencyTokenBob, new DefaultGasProvider());
-		sampleTokenLoadedFromFrom.approve(gct.getContractAddress(), BigInteger.valueOf(10)).send();
-		sampleTokenLoadedFromFrom.approve(gcto.getContractAddress(), BigInteger.valueOf(10)).send();
-
 		// Now mint Bobs Token for GCT
 		GroupCurrencyTokenOwner gctoBob = GroupCurrencyTokenOwner.load(gcto.getContractAddress(), web3j, groupCurrencyTokenBob, new DefaultGasProvider());
 		gctoBob.mintTransitive(tokenOwners, srcs, dests, wads).send();
+
+		// Create new account for Alice
+		OrgaHub orgaHubAlice = OrgaHub.load(orgaHub.getContractAddress(), web3j, groupCurrencyTokenAlice, new DefaultGasProvider());
+		trxRcp = orgaHubAlice.signup().send();
+		signupEvents = orgaHubAlice.getSignupEvents(trxRcp);
+		String aliceToken = null;
+		for (OrgaHub.SignupEventResponse signupEventResponse : signupEvents) {
+			aliceToken = signupEventResponse.token;
+		}
+
+		// Bob trusts Alice
+		orgaHubBob.trust(groupCurrencyTokenAlice.getAddress(), BigInteger.TEN).send();
+
+		tokenOwners = Lists.newArrayList(groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress());
+		srcs = Lists.newArrayList(groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress());
+		dests = Lists.newArrayList(groupCurrencyTokenBob.getAddress(), gcto.getContractAddress());
+		wads = Lists.newArrayList(BigInteger.ONE, BigInteger.ONE);
+
+		// Now mint Bobs Token for GCT
+		GroupCurrencyTokenOwner gctoAlice = GroupCurrencyTokenOwner.load(gcto.getContractAddress(), web3j, groupCurrencyTokenAlice, new DefaultGasProvider());
+		gctoAlice.mintTransitive(tokenOwners, srcs, dests, wads).send();
+
+
 	}
 
 	private OrgaHub deployOrgaHub(Credentials deployer) throws Exception {

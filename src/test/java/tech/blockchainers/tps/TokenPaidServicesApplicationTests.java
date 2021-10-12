@@ -92,7 +92,7 @@ class TokenPaidServicesApplicationTests {
 		tokenOwners = Lists.newArrayList(groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress());
 		srcs = Lists.newArrayList(groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress());
 		dests = Lists.newArrayList(groupCurrencyTokenBob.getAddress(), gcto.getContractAddress());
-		wads = Lists.newArrayList(BigInteger.ONE, BigInteger.ONE);
+		wads = Lists.newArrayList(BigInteger.TWO, BigInteger.TWO);
 
 		// Now mint Bobs Token for GCT
 		GroupCurrencyTokenOwner gctoAlice = GroupCurrencyTokenOwner.load(gcto.getContractAddress(), web3j, groupCurrencyTokenAlice, new DefaultGasProvider());

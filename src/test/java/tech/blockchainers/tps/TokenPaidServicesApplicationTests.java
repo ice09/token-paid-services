@@ -38,9 +38,11 @@ class TokenPaidServicesApplicationTests {
 		Credentials groupCurrencyTokenOwner = credentialHolder.deriveChildKeyPair(3);
 		Credentials groupCurrencyTokenAlice = credentialHolder.deriveChildKeyPair(4);
 		Credentials groupCurrencyTokenBob = credentialHolder.deriveChildKeyPair(5);
+		Credentials groupCurrencyTokenCharly = credentialHolder.deriveChildKeyPair(6);
+
 		OrgaHub orgaHub = deployOrgaHub(orgaHubDeployer);
 
-		// Signup with orgaHubSignupAddress
+		// Signup Orga with orgaHubSignupAddress
 		OrgaHub orgaHubSignup = OrgaHub.load(orgaHub.getContractAddress(), web3j, orgaHubOrgaSignup, new DefaultGasProvider());
 		orgaHubSignup.organizationSignup().send();
 
@@ -98,6 +100,26 @@ class TokenPaidServicesApplicationTests {
 		GroupCurrencyTokenOwner gctoAlice = GroupCurrencyTokenOwner.load(gcto.getContractAddress(), web3j, groupCurrencyTokenAlice, new DefaultGasProvider());
 		gctoAlice.mintTransitive(tokenOwners, srcs, dests, wads).send();
 
+		// Create new account for Charly
+		OrgaHub orgaHubCharly = OrgaHub.load(orgaHub.getContractAddress(), web3j, groupCurrencyTokenCharly, new DefaultGasProvider());
+		trxRcp = orgaHubCharly.signup().send();
+		signupEvents = orgaHubCharly.getSignupEvents(trxRcp);
+		String charlyToken = null;
+		for (OrgaHub.SignupEventResponse signupEventResponse : signupEvents) {
+			charlyToken = signupEventResponse.token;
+		}
+
+		// Alice trusts Charly
+		orgaHubAlice.trust(groupCurrencyTokenCharly.getAddress(), BigInteger.TEN).send();
+
+		tokenOwners = Lists.newArrayList(groupCurrencyTokenCharly.getAddress(), groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress());
+		srcs = Lists.newArrayList(groupCurrencyTokenCharly.getAddress(), groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress());
+		dests = Lists.newArrayList(groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress(), gcto.getContractAddress());
+		wads = Lists.newArrayList(BigInteger.TWO, BigInteger.TWO, BigInteger.TWO);
+
+		// Now mint Bobs Token for GCT
+		GroupCurrencyTokenOwner gctoCharly = GroupCurrencyTokenOwner.load(gcto.getContractAddress(), web3j, groupCurrencyTokenCharly, new DefaultGasProvider());
+		gctoCharly.mintTransitive(tokenOwners, srcs, dests, wads).send();
 
 	}
 

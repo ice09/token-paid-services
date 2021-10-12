@@ -9,11 +9,11 @@ import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.gas.DefaultGasProvider;
-import tech.blockchainers.ERC20;
 import tech.blockchainers.GroupCurrencyToken;
 import tech.blockchainers.GroupCurrencyTokenOwner;
 import tech.blockchainers.OrgaHub;
 import tech.blockchainers.tps.config.CredentialHolder;
+
 import java.math.BigInteger;
 import java.util.List;
 

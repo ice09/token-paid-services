@@ -41,6 +41,7 @@ contract GroupCurrencyTokenOwner {
         uint lastElementIndex = tokenOwners.length-1;
         require(dests[lastElementIndex] == address(this), "GroupCurrencyTokenOwner must be final receiver in the path.");
         OrgaHub(hub).transferThrough(tokenOwners, srcs, dests, wads);
+        // approve GCT for CRC to be swapped so CRC can be transferred to Treasury
         ERC20(HubI(hub).userToToken(tokenOwners[lastElementIndex])).approve(token, wads[lastElementIndex]);
         uint mintedAmount = GroupCurrencyToken(token).mintDelegate(address(this), HubI(hub).userToToken(tokenOwners[lastElementIndex]), wads[lastElementIndex]);
         GroupCurrencyToken(token).transfer(srcs[0], mintedAmount);

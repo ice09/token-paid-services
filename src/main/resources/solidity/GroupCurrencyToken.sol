@@ -88,7 +88,7 @@ contract GroupCurrencyToken is ERC20 {
         uint256 mintAmount = _amount.sub(mintFee);
         // mint amount-fee to msg.sender
         _mint(msg.sender, mintAmount);
-        // Token Swap
+        // Token Swap, send CRC from GCTO to Treasury (has been transferred to GCTO by transferThrough)
         ERC20(_collateral).transferFrom(msg.sender, treasury, _amount);
         emit Minted(msg.sender, _amount, mintAmount, mintFee);
         return mintAmount;

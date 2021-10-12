@@ -96,7 +96,7 @@ class TokenPaidServicesApplicationTests {
 		dests = Lists.newArrayList(groupCurrencyTokenBob.getAddress(), gcto.getContractAddress());
 		wads = Lists.newArrayList(BigInteger.TWO, BigInteger.TWO);
 
-		// Now mint Bobs Token for GCT
+		// Now mint Alice Token for GCT
 		GroupCurrencyTokenOwner gctoAlice = GroupCurrencyTokenOwner.load(gcto.getContractAddress(), web3j, groupCurrencyTokenAlice, new DefaultGasProvider());
 		gctoAlice.mintTransitive(tokenOwners, srcs, dests, wads).send();
 
@@ -117,7 +117,7 @@ class TokenPaidServicesApplicationTests {
 		dests = Lists.newArrayList(groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress(), gcto.getContractAddress());
 		wads = Lists.newArrayList(BigInteger.TWO, BigInteger.TWO, BigInteger.TWO);
 
-		// Now mint Bobs Token for GCT
+		// Now mint Charly Token for GCT
 		GroupCurrencyTokenOwner gctoCharly = GroupCurrencyTokenOwner.load(gcto.getContractAddress(), web3j, groupCurrencyTokenCharly, new DefaultGasProvider());
 		gctoCharly.mintTransitive(tokenOwners, srcs, dests, wads).send();
 

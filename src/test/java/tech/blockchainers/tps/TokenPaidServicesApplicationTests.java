@@ -12,7 +12,7 @@ import org.web3j.tx.gas.DefaultGasProvider;
 import tech.blockchainers.GroupCurrencyToken;
 import tech.blockchainers.GroupCurrencyTokenOwner;
 import tech.blockchainers.OrgaHub;
-import tech.blockchainers.tps.config.CredentialHolder;
+import tech.blockchainers.tps.config.PrototypeConfig;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -26,49 +26,47 @@ class TokenPaidServicesApplicationTests {
 	private Web3j web3j;
 
 	@Autowired
-	private CredentialHolder credentialHolder;
+	private PrototypeConfig prototypeConfig;
+
+	@Autowired
+	private EventLogger eventLogger;
 
 	@Test
 	void contextLoads() throws Exception {
-		String treasuryAddress = "0x0000000000000000000000000000000000000001";
+		Credentials contractDeployer = prototypeConfig.getOrgaHubDeployer();
+		Credentials groupCurrencyTokenAlice = prototypeConfig.getGroupCurrencyTokenAlice();
+		Credentials groupCurrencyTokenBob = prototypeConfig.getGroupCurrencyTokenBob();
+		Credentials groupCurrencyTokenCharly = prototypeConfig.getGroupCurrencyTokenCharly();
 
-		Credentials orgaHubDeployer = credentialHolder.deriveChildKeyPair(0);
-		Credentials orgaHubOrgaSignup = credentialHolder.deriveChildKeyPair(1);
-		Credentials groupCurrencyTokenDeployer = credentialHolder.deriveChildKeyPair(2);
-		Credentials groupCurrencyTokenOwner = credentialHolder.deriveChildKeyPair(3);
-		Credentials groupCurrencyTokenAlice = credentialHolder.deriveChildKeyPair(4);
-		Credentials groupCurrencyTokenBob = credentialHolder.deriveChildKeyPair(5);
-		Credentials groupCurrencyTokenCharly = credentialHolder.deriveChildKeyPair(6);
+		TransactionReceipt trx; // Reused for Event logging purposes
 
-		OrgaHub orgaHub = deployOrgaHub(orgaHubDeployer);
+		// Deploy new Contract OrgaHub
+		OrgaHub orgaHub = deployOrgaHub(contractDeployer);
 
-		// Signup Orga with orgaHubSignupAddress
-		OrgaHub orgaHubSignup = OrgaHub.load(orgaHub.getContractAddress(), web3j, orgaHubOrgaSignup, new DefaultGasProvider());
-		orgaHubSignup.organizationSignup().send();
+		// Deploy GCT and GCTO
+		GroupCurrencyToken gct = deployGroupCurrencyToken(contractDeployer, orgaHub.getContractAddress(), contractDeployer.getAddress(), prototypeConfig.getTreasuryAddress());
+		GroupCurrencyTokenOwner gcto = deployGroupCurrencyTokenOwner(contractDeployer, orgaHub.getContractAddress(), gct.getContractAddress(), contractDeployer.getAddress());
 
-		GroupCurrencyToken gct = deployGroupCurrencyToken(groupCurrencyTokenDeployer, orgaHub.getContractAddress(), groupCurrencyTokenDeployer.getAddress(), treasuryAddress);
-		GroupCurrencyTokenOwner gcto = deployGroupCurrencyTokenOwner(groupCurrencyTokenOwner, orgaHub.getContractAddress(), gct.getContractAddress(), groupCurrencyTokenOwner.getAddress());
-
-		// Change Admin to GCTO Contract Address
+		// Change Admin on Hub to GCTO Contract Address
 		orgaHub.changeAdmin(gcto.getContractAddress()).send();
+		eventLogger.addManualEvent("Changed Admin on OrgaHub", gcto.getContractAddress());
 
-		// Change Owner to GCT Contract Address
+		// Change Owner on GCT to GCTO Contract Address
 		gct.changeOwner(gcto.getContractAddress()).send();
+		eventLogger.addManualEvent("Changed Admin on GroupCurrencyToken", gcto.getContractAddress());
 
 		// Setup GCTO, Orga Signup and set Delegate Trustee
-		gcto.setup().send();
+		trx = gcto.setup().send();
+		eventLogger.addOrgaHubOrgaSignupListener(orgaHub, trx);
 
 		// Create new account for Bob
 		OrgaHub orgaHubBob = OrgaHub.load(orgaHub.getContractAddress(), web3j, groupCurrencyTokenBob, new DefaultGasProvider());
-		TransactionReceipt trxRcp = orgaHubBob.signup().send();
-		List<OrgaHub.SignupEventResponse> signupEvents = orgaHubBob.getSignupEvents(trxRcp);
-		String bobToken = null;
-		for (OrgaHub.SignupEventResponse signupEventResponse : signupEvents) {
-			bobToken = signupEventResponse.token;
-		}
+		trx = orgaHubBob.signup().send();
+		String tokenBob = eventLogger.addOrgaHubSignupListener(orgaHubBob, trx);
 
 		// Trust Bob
-		gcto.trust(groupCurrencyTokenBob.getAddress()).send();
+		trx = gcto.trust(groupCurrencyTokenBob.getAddress()).send();
+		eventLogger.addGCTOTrustListener(orgaHub, trx);
 
 		List<String> tokenOwners = Lists.newArrayList(groupCurrencyTokenBob.getAddress());
 		List<String> srcs = Lists.newArrayList(groupCurrencyTokenBob.getAddress());
@@ -81,15 +79,12 @@ class TokenPaidServicesApplicationTests {
 
 		// Create new account for Alice
 		OrgaHub orgaHubAlice = OrgaHub.load(orgaHub.getContractAddress(), web3j, groupCurrencyTokenAlice, new DefaultGasProvider());
-		trxRcp = orgaHubAlice.signup().send();
-		signupEvents = orgaHubAlice.getSignupEvents(trxRcp);
-		String aliceToken = null;
-		for (OrgaHub.SignupEventResponse signupEventResponse : signupEvents) {
-			aliceToken = signupEventResponse.token;
-		}
+		trx = orgaHubAlice.signup().send();
+		String tokenAlice = eventLogger.addOrgaHubSignupListener(orgaHubAlice, trx);
 
 		// Bob trusts Alice
-		orgaHubBob.trust(groupCurrencyTokenAlice.getAddress(), BigInteger.TEN).send();
+		trx = orgaHubBob.trust(groupCurrencyTokenAlice.getAddress(), BigInteger.TEN).send();
+		eventLogger.addGCTOTrustListener(orgaHub, trx);
 
 		tokenOwners = Lists.newArrayList(groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress());
 		srcs = Lists.newArrayList(groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress());
@@ -102,15 +97,12 @@ class TokenPaidServicesApplicationTests {
 
 		// Create new account for Charly
 		OrgaHub orgaHubCharly = OrgaHub.load(orgaHub.getContractAddress(), web3j, groupCurrencyTokenCharly, new DefaultGasProvider());
-		trxRcp = orgaHubCharly.signup().send();
-		signupEvents = orgaHubCharly.getSignupEvents(trxRcp);
-		String charlyToken = null;
-		for (OrgaHub.SignupEventResponse signupEventResponse : signupEvents) {
-			charlyToken = signupEventResponse.token;
-		}
+		trx = orgaHubCharly.signup().send();
+		String tokenCharly = eventLogger.addOrgaHubSignupListener(orgaHubCharly, trx);
 
 		// Alice trusts Charly
-		orgaHubAlice.trust(groupCurrencyTokenCharly.getAddress(), BigInteger.TEN).send();
+		trx = orgaHubAlice.trust(groupCurrencyTokenCharly.getAddress(), BigInteger.TEN).send();
+		eventLogger.addGCTOTrustListener(orgaHub, trx);
 
 		tokenOwners = Lists.newArrayList(groupCurrencyTokenCharly.getAddress(), groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress());
 		srcs = Lists.newArrayList(groupCurrencyTokenCharly.getAddress(), groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress());
@@ -119,7 +111,11 @@ class TokenPaidServicesApplicationTests {
 
 		// Now mint Charly Token for GCT
 		GroupCurrencyTokenOwner gctoCharly = GroupCurrencyTokenOwner.load(gcto.getContractAddress(), web3j, groupCurrencyTokenCharly, new DefaultGasProvider());
-		gctoCharly.mintTransitive(tokenOwners, srcs, dests, wads).send();
+		trx = gctoCharly.mintTransitive(tokenOwners, srcs, dests, wads).send();
+		eventLogger.addTokenTransferEvent(tokenBob, groupCurrencyTokenBob, trx);
+		eventLogger.addTokenMintingEvent(gct, trx);
+
+		eventLogger.getAllCircleEvents().forEach(it -> System.out.println(it));
 
 	}
 

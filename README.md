@@ -1,5 +1,9 @@
 # token-paid-services
 
+## Documentation
+
+see https://github.com/ice09/circles-contracts/blob/master/contracts/GroupCurrencyTokenOwnerReadme.md
+
 ## Setup
 
 * Run `hardhat` with `npx hardhat node`

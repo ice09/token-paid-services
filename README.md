@@ -10,6 +10,12 @@ see https://github.com/ice09/circles-contracts/blob/master/contracts/GroupCurren
 
 ## Run
 
+* Start the application with `mvn spring-boot:run`
+* Open your browser at http://localhost:8889/swagger-ui.html
+* Call the services `initialize`, `approve` and `call` in this sequence
+
+## Testing
+
 * Run Unittest `TokenPaidServiceApplicationTests`
 
 ## Remix Editing

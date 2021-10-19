@@ -7,7 +7,7 @@ import java.math.BigInteger;
 
 @Data
 @Builder
-public class UnlimitedSupplyTokenDto {
+public class GroupCurrencyTokenDto {
 
     private String address;
     private BigInteger allowance;

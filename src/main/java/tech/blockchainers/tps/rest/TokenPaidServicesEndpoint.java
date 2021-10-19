@@ -9,6 +9,7 @@ import org.web3j.protocol.Web3j;
 import org.web3j.tx.gas.DefaultGasProvider;
 import tech.blockchainers.GroupCurrencyToken;
 import tech.blockchainers.tps.config.PrototypeConfig;
+import tech.blockchainers.tps.rest.dto.GroupCurrencyTokenDto;
 import tech.blockchainers.tps.service.CirclesGCTPaidService;
 
 import java.math.BigInteger;
@@ -30,25 +31,25 @@ public class TokenPaidServicesEndpoint {
     }
 
     @PostMapping("/initializeTrustGraph")
-    public String deployDemoToken() throws Exception {
+    public GroupCurrencyTokenDto deployDemoToken() throws Exception {
         groupCurrencyTokenAddress = circlesGCTPaidService.prepareTokenTrustGraph();
-        return groupCurrencyTokenAddress;
+        return GroupCurrencyTokenDto.builder().address(groupCurrencyTokenAddress).allowance(BigInteger.ZERO).build();
     }
 
     @PostMapping("/approveServiceOnDemoToken")
-    public GroupCurrencyToken approveServiceOnDemoToken() throws Exception {
+    public GroupCurrencyTokenDto approveServiceOnDemoToken() throws Exception {
         if (groupCurrencyTokenAddress == null) {
             throw new IllegalStateException("GroupCurrencyToken and Trust Graph not initialized.");
         }
         BigInteger allowance = BigInteger.valueOf(100);
         GroupCurrencyToken groupCurrencyToken = GroupCurrencyToken.load(groupCurrencyTokenAddress, web3j, prototypeConfig.getGroupCurrencyTokenCharly(), new DefaultGasProvider());
         groupCurrencyToken.approve(prototypeConfig.getCredentialHolder().deriveChildKeyPair(9).getAddress(), allowance).send();
-        return groupCurrencyToken;
+        return GroupCurrencyTokenDto.builder().address(groupCurrencyToken.getContractAddress()).allowance(allowance).build();
     }
 
     @GetMapping("/call")
     public String callService() throws Exception {
-        String mockedResult = "YEAH!";
+        String mockedResult = "Chuck Norris counted to infinity ... twice.";
         GroupCurrencyToken groupCurrencyToken = GroupCurrencyToken.load(groupCurrencyTokenAddress, web3j, prototypeConfig.getCredentialHolder().deriveChildKeyPair(9), new DefaultGasProvider());
         groupCurrencyToken.transferFrom(prototypeConfig.getGroupCurrencyTokenCharly().getAddress(), prototypeConfig.getCredentialHolder().deriveChildKeyPair(9).getAddress(), BigInteger.valueOf(1)).send();
         return mockedResult;

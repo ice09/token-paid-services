@@ -1,16 +1,15 @@
 package tech.blockchainers.tps.rest;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.web3j.protocol.Web3j;
 import org.web3j.tx.gas.DefaultGasProvider;
-import tech.blockchainers.UnlimitedSupplyToken;
-import tech.blockchainers.tps.config.CredentialHolder;
-import tech.blockchainers.tps.rest.dto.UnlimitedSupplyTokenDto;
+import tech.blockchainers.GroupCurrencyToken;
+import tech.blockchainers.tps.config.PrototypeConfig;
+import tech.blockchainers.tps.service.CirclesGCTPaidService;
 
 import java.math.BigInteger;
 
@@ -19,43 +18,39 @@ import java.math.BigInteger;
 @RequestMapping("/api")
 public class TokenPaidServicesEndpoint {
 
-    private final CredentialHolder credentialHolder;
+    private final PrototypeConfig prototypeConfig;
     private final Web3j web3j;
-    private String tokenAddress;
+    private final CirclesGCTPaidService circlesGCTPaidService;
+    private String groupCurrencyTokenAddress;
 
-    public TokenPaidServicesEndpoint(CredentialHolder credentialHolder, Web3j web3j) {
-        this.credentialHolder = credentialHolder;
+    public TokenPaidServicesEndpoint(PrototypeConfig prototypeConfig, Web3j web3j, CirclesGCTPaidService circlesGCTPaidService) {
+        this.prototypeConfig = prototypeConfig;
         this.web3j = web3j;
+        this.circlesGCTPaidService = circlesGCTPaidService;
     }
 
-    @PostMapping("/deployDemoToken")
-    public UnlimitedSupplyTokenDto deployDemoToken() throws Exception {
-        UnlimitedSupplyToken sampleToken = UnlimitedSupplyToken.deploy(web3j, credentialHolder.deriveChildKeyPair(0), new DefaultGasProvider(), "TKN", "TKN").send();
-        log.info("Deploy UnlimitedSupplyToken Contract to {}", sampleToken.getContractAddress());
-        tokenAddress = sampleToken.getContractAddress();
-        sampleToken.mintToken(credentialHolder.deriveChildKeyPair(1).getAddress(), BigInteger.valueOf(1000)).send();
-        UnlimitedSupplyTokenDto.UnlimitedSupplyTokenDtoBuilder sampleTokenDtoBuilder = UnlimitedSupplyTokenDto.builder();
-        return sampleTokenDtoBuilder.address(sampleToken.getContractAddress()).build();
+    @PostMapping("/initializeTrustGraph")
+    public String deployDemoToken() throws Exception {
+        groupCurrencyTokenAddress = circlesGCTPaidService.prepareTokenTrustGraph();
+        return groupCurrencyTokenAddress;
     }
 
     @PostMapping("/approveServiceOnDemoToken")
-    public UnlimitedSupplyTokenDto approveServiceOnDemoToken() throws Exception {
-        if (StringUtils.isEmpty(tokenAddress)) {
-            throw new IllegalStateException("TokenAddress not set.");
+    public GroupCurrencyToken approveServiceOnDemoToken() throws Exception {
+        if (groupCurrencyTokenAddress == null) {
+            throw new IllegalStateException("GroupCurrencyToken and Trust Graph not initialized.");
         }
-        UnlimitedSupplyToken sampleToken = UnlimitedSupplyToken.load(tokenAddress, web3j, credentialHolder.deriveChildKeyPair(1), new DefaultGasProvider());
         BigInteger allowance = BigInteger.valueOf(100);
-        sampleToken.approve(credentialHolder.deriveChildKeyPair(2).getAddress(), allowance).send();
-
-        UnlimitedSupplyTokenDto.UnlimitedSupplyTokenDtoBuilder sampleTokenDtoBuilder = UnlimitedSupplyTokenDto.builder();
-        return sampleTokenDtoBuilder.address(sampleToken.getContractAddress()).allowance(allowance).build();
+        GroupCurrencyToken groupCurrencyToken = GroupCurrencyToken.load(groupCurrencyTokenAddress, web3j, prototypeConfig.getGroupCurrencyTokenCharly(), new DefaultGasProvider());
+        groupCurrencyToken.approve(prototypeConfig.getCredentialHolder().deriveChildKeyPair(9).getAddress(), allowance).send();
+        return groupCurrencyToken;
     }
 
     @GetMapping("/call")
     public String callService() throws Exception {
         String mockedResult = "YEAH!";
-        UnlimitedSupplyToken sampleToken = UnlimitedSupplyToken.load(tokenAddress, web3j, credentialHolder.deriveChildKeyPair(2), new DefaultGasProvider());
-        sampleToken.transferFrom(credentialHolder.deriveChildKeyPair(1).getAddress(), credentialHolder.deriveChildKeyPair(3).getAddress(), BigInteger.valueOf(25)).send();
+        GroupCurrencyToken groupCurrencyToken = GroupCurrencyToken.load(groupCurrencyTokenAddress, web3j, prototypeConfig.getCredentialHolder().deriveChildKeyPair(9), new DefaultGasProvider());
+        groupCurrencyToken.transferFrom(prototypeConfig.getGroupCurrencyTokenCharly().getAddress(), prototypeConfig.getCredentialHolder().deriveChildKeyPair(9).getAddress(), BigInteger.valueOf(1)).send();
         return mockedResult;
     }
 }

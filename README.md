@@ -17,6 +17,7 @@ see https://github.com/ice09/circles-contracts/blob/master/contracts/GroupCurren
 ## Testing
 
 * Run Unittest `TokenPaidServiceApplicationTests`
+* For [Centralized Edition](https://github.com/ice09/circles-contracts/blob/master/contracts/GroupCurrencyTokenOwnerCentralizedEditionReadme.md) Run Unittest `TokenPaidServicesCentralizedEditionApplicationTests`
 
 ## Remix Editing
 

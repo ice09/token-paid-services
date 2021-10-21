@@ -8,10 +8,7 @@ import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.gas.DefaultGasProvider;
-import tech.blockchainers.ERC20;
-import tech.blockchainers.GroupCurrencyToken;
-import tech.blockchainers.GroupCurrencyTokenOwner;
-import tech.blockchainers.OrgaHub;
+import tech.blockchainers.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,15 +27,15 @@ public class EventLogger<builder> {
     public void addTokenMintingEvent(GroupCurrencyToken groupCurrencyToken, TransactionReceipt trx) {
         for (GroupCurrencyToken.MintedEventResponse event : groupCurrencyToken.getMintedEvents(trx)) {
             log.info(String.format("GCT Minted amount %s to %s", event.mintAmount, event.receiver));
-            CirclesEvent cEvent = builder.event("GCT." + GroupCurrencyToken.MINTED_EVENT.getName()).eventParams(Lists.newArrayList(event.receiver, event.amount.toString(), event.mintAmount.toString())).build();
+            CirclesEvent cEvent = builder.event("GCT." + GroupCurrencyToken.MINTED_EVENT.getName()).eventParams(Lists.newArrayList(event.log.getAddress(), event.receiver, event.amount.toString(), event.mintAmount.toString())).build();
             circlesEvents.add(cEvent);
         }
     }
 
-    public void addTokenOwnerMintingEvent(GroupCurrencyTokenOwner groupCurrencyTokenOwner, TransactionReceipt trx) {
-        for (GroupCurrencyTokenOwner.MintedEventResponse event : groupCurrencyTokenOwner.getMintedEvents(trx)) {
-            log.info(String.format("GCTO Minted amount %s to %s", event.amount, event.receiver));
-            CirclesEvent cEvent = builder.event("GCTO." + GroupCurrencyTokenOwner.MINTED_EVENT.getName()).eventParams(Lists.newArrayList(event.receiver, event.amount.toString())).build();
+    public void addTokenMintingEvent(GroupCurrencyTokenCentralizedEdition groupCurrencyToken, TransactionReceipt trx) {
+        for (GroupCurrencyTokenCentralizedEdition.MintedEventResponse event : groupCurrencyToken.getMintedEvents(trx)) {
+            log.info(String.format("GCT Minted amount %s to %s", event.mintAmount, event.receiver));
+            CirclesEvent cEvent = builder.event("GCT." + GroupCurrencyTokenCentralizedEdition.MINTED_EVENT.getName()).eventParams(Lists.newArrayList(event.log.getAddress(), event.receiver, event.amount.toString(), event.mintAmount.toString())).build();
             circlesEvents.add(cEvent);
         }
     }
@@ -47,6 +44,14 @@ public class EventLogger<builder> {
         for (OrgaHub.OrganizationSignupEventResponse event : orgaHubSignup.getOrganizationSignupEvents(trx)) {
             log.info(String.format("Signed up Organization %s", event.organization));
             CirclesEvent cEvent = builder.event(OrgaHub.ORGANIZATIONSIGNUP_EVENT.getName()).eventParams(Lists.newArrayList(event.organization)).build();
+            circlesEvents.add(cEvent);
+        }
+    }
+
+    public void addHubOrgaSignupListener(Hub orgaHubSignup, TransactionReceipt trx) {
+        for (Hub.OrganizationSignupEventResponse event : orgaHubSignup.getOrganizationSignupEvents(trx)) {
+            log.info(String.format("Signed up Organization %s", event.organization));
+            CirclesEvent cEvent = builder.event(Hub.ORGANIZATIONSIGNUP_EVENT.getName()).eventParams(Lists.newArrayList(event.organization)).build();
             circlesEvents.add(cEvent);
         }
     }
@@ -72,10 +77,30 @@ public class EventLogger<builder> {
         return lastToken;
     }
 
+    public String addHubSignupListener(Hub orgaHub, TransactionReceipt trx) {
+        String lastToken = "";
+        for (Hub.SignupEventResponse event : orgaHub.getSignupEvents(trx)) {
+            log.info(String.format("Signed up User %s with Token %s", event.user, event.token));
+            lastToken = event.token;
+            CirclesEvent cEvent = builder.event(Hub.SIGNUP_EVENT.getName()).eventParams(Lists.newArrayList(event.user, event.token)).build();
+            circlesEvents.add(cEvent);
+        }
+        return lastToken;
+    }
+
     public void addGCTOTrustListener(OrgaHub hub, TransactionReceipt trx) {
         for (OrgaHub.TrustEventResponse event : hub.getTrustEvents(trx)) {
             log.info(String.format("User %s trusted User %s", event.canSendTo, event.user));
             CirclesEvent cEvent = builder.event(OrgaHub.TRUST_EVENT.getName()).eventParams(Lists.newArrayList(event.canSendTo, event.user)).build();
+            circlesEvents.add(cEvent);
+        }
+
+    }
+
+    public void addGCTOTrustListener(Hub hub, TransactionReceipt trx) {
+        for (Hub.TrustEventResponse event : hub.getTrustEvents(trx)) {
+            log.info(String.format("User %s trusted User %s", event.canSendTo, event.user));
+            CirclesEvent cEvent = builder.event(Hub.TRUST_EVENT.getName()).eventParams(Lists.newArrayList(event.canSendTo, event.user)).build();
             circlesEvents.add(cEvent);
         }
 
@@ -86,7 +111,7 @@ public class EventLogger<builder> {
         log.info("Retrieving TRANSFER events for token " + token);
         for (ERC20.TransferEventResponse event : tokenContract.getTransferEvents(trx)) {
             log.info(String.format("User %s transferred %s to User %s", event.from, event.value, event.to));
-            CirclesEvent cEvent = builder.event(ERC20.TRANSFER_EVENT.getName()).eventParams(Lists.newArrayList(event.from, event.to, event.value.toString())).build();
+            CirclesEvent cEvent = builder.event(ERC20.TRANSFER_EVENT.getName()).eventParams(Lists.newArrayList(event.log.getAddress(), event.from, event.to, event.value.toString())).build();
             circlesEvents.add(cEvent);
         }
 

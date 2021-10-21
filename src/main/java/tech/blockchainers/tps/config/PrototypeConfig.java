@@ -10,7 +10,7 @@ public class PrototypeConfig {
 
     private final CredentialHolder credentialHolder;
 
-    String treasuryAddress = "0x0000000000000000000000000000000000000001";
+    String treasuryAddress = "0x1111111111111111111111111111111111111111";
 
     Credentials orgaHubDeployer;
     Credentials groupCurrencyTokenDeployer;

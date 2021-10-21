@@ -46,7 +46,7 @@ public class CirclesGCTCentralizedEditionPaidService {
 
         // Change Owner on GCT to GCTO Contract Address
         gct.changeOwner(gcto.getContractAddress()).send();
-        eventLogger.addManualEvent("Changed Admin on GroupCurrencyToken", gcto.getContractAddress());
+        eventLogger.addManualEvent("Changed Admin on GroupCurrencyToken", gcto.getContractAddress(), gct.getContractAddress());
 
         // Setup GCTO, Orga Signup
         trx = gcto.setup().send();

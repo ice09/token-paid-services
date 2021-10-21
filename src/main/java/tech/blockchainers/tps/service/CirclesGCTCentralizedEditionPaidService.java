@@ -85,10 +85,9 @@ public class CirclesGCTCentralizedEditionPaidService {
         List<BigInteger> wads = Lists.newArrayList(BigInteger.TWO, BigInteger.TWO, BigInteger.TWO);
 
         // Now mint Charly Token for GCT
-        GroupCurrencyTokenOwnerCentralizedEdition gctoCharly = GroupCurrencyTokenOwnerCentralizedEdition.load(gcto.getContractAddress(), web3j, groupCurrencyTokenCharly, new DefaultGasProvider());
         trx = orgaHubCharly.transferThrough(tokenOwners, srcs, dests, wads).send();
         eventLogger.addTokenTransferEvent(tokenBob, groupCurrencyTokenBob, trx);
-        trx = gctoCharly.mintTransitive(groupCurrencyTokenCharly.getAddress(), groupCurrencyTokenBob.getAddress(), BigInteger.TWO).send();
+        trx = gcto.mintTransitive(groupCurrencyTokenCharly.getAddress(), groupCurrencyTokenBob.getAddress(), BigInteger.TWO).send();
         eventLogger.addTokenMintingEvent(gct, trx);
         eventLogger.addTokenTransferEvent(tokenCharly, groupCurrencyTokenBob, trx);
 

@@ -39,8 +39,8 @@ contract GroupCurrencyTokenOwnerCentralizedEdition {
         owner = _owner;
     }
     
-    // Group currently is created from collateral tokens. Collateral is directly part of the directMembers dictionary.
-    function mintTransitive(address dest, address src, uint wads) public {
+    // This is a security-problematic minting (as not the complete path is verified) and has to be onlyOwner
+    function mintTransitive(address dest, address src, uint wads) onlyOwner public {
         // approve GCT for CRC to be swapped so CRC can be transferred to Treasury
         ERC20(HubI(hub).userToToken(src)).approve(token, wads);
         uint mintedAmount = GroupCurrencyTokenCentralizedEdition(token).mint(HubI(hub).userToToken(src), wads);

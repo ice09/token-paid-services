@@ -84,9 +84,12 @@ public class CirclesGCTCentralizedEditionPaidService {
         List<String> dests = Lists.newArrayList(groupCurrencyTokenAlice.getAddress(), groupCurrencyTokenBob.getAddress(), gcto.getContractAddress());
         List<BigInteger> wads = Lists.newArrayList(BigInteger.TWO, BigInteger.TWO, BigInteger.TWO);
 
-        // Now mint Charly Token for GCT
+        // Transitive Transfer of Charly Tokens to GCTO
         trx = orgaHubCharly.transferThrough(tokenOwners, srcs, dests, wads).send();
+        // The Service must monitor the events on the GCTO contract (to get transfer events)
         eventLogger.addTokenTransferEvent(tokenBob, groupCurrencyTokenBob, trx);
+        // The Service must trigger mintTransitive with destination and source (to reduce fraud potential) to mint
+        // Use Bob Tokens as source (these have been transferred to GTCO transitively) and Charly as destination
         trx = gcto.mintTransitive(groupCurrencyTokenCharly.getAddress(), groupCurrencyTokenBob.getAddress(), BigInteger.TWO).send();
         eventLogger.addTokenMintingEvent(gct, trx);
         eventLogger.addTokenTransferEvent(tokenCharly, groupCurrencyTokenBob, trx);
